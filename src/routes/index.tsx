@@ -2,8 +2,10 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '@/layout/MainLayout';
 import Login from '@/pages/Auth/Login';
 import UserTable from '@/pages/Admin/User/UserTable';
+import AuditLogTable from '@/pages/Admin/AuditLog/AuditLogTable';
 import AuthGuard from './route-guard/AuthGuard';
 import GuestGuard from './route-guard/GuestGuard';
+import PermissionGuard from './route-guard/PermissionGuard';
 
 // ==============================|| ROUTES RENDER ||============================== //
 
@@ -26,7 +28,15 @@ const router = createBrowserRouter(
       ),
       children: [
         { index: true, element: <Navigate to="/admin/users" replace /> },
-        { path: 'admin/users', element: <UserTable /> }
+        { path: 'admin/users', element: <UserTable /> },
+        {
+          path: 'admin/audit-logs',
+          element: (
+            <PermissionGuard permission="audit">
+              <AuditLogTable />
+            </PermissionGuard>
+          )
+        }
       ]
     },
     { path: '*', element: <Navigate to="/" replace /> }

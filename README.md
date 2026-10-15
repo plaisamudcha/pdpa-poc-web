@@ -140,6 +140,24 @@ useListUserTable: state { search, page, pageSize }
 
 ---
 
+## หน้า Audit log (`/admin/audit-logs`, dpo เท่านั้น)
+
+เมนู "Audit log" แสดงเฉพาะ role ที่มีสิทธิ์ `audit` — พิมพ์ URL ตรงก็ถูก `PermissionGuard` พากลับ และ API ตอบ 403 อีกชั้น
+
+```
+useListAuditLogTable: ฟอร์มตัวกรอง → กด "ค้นหา" → useGetAuditLogsQuery
+ → GET /audit-log?action=&result=&username=&subjectId=&from=&to=&page=&pageSize=
+ → ตาราง: เวลา / ผู้ทำรายการ / การกระทำ / ผลลัพธ์ / รหัสผู้ใช้ / field ที่ถอดรหัสหรือแก้ไข / เหตุผล
+```
+
+- **ตัวกรอง:** การกระทำ, ผลลัพธ์ (สำเร็จ / ถูกปฏิเสธ / ไม่พบ), username พนักงาน, รหัสผู้ใช้, ช่วงวันที่
+- **คลิก username** → ดูทุกอย่างที่พนักงานคนนั้นทำ / **คลิกรหัสผู้ใช้** → ดูทุกคนที่เข้าถึงข้อมูลของผู้ใช้คนนั้น
+- จากหน้ารายละเอียดผู้ใช้ dpo กด "ดูประวัติการเข้าถึง" → เปิด `/admin/audit-logs?subjectId=<id>`
+- log ไม่มี PII ของผู้ใช้ — แสดงแค่รหัสอ้างอิงและชื่อ field (`healthNote` ไฮไลต์สีส้มเพราะเป็นข้อมูลอ่อนไหว)
+- ชื่อพนักงาน API เติมให้ตอนแสดงจาก `staffs` — login ด้วย username ที่ไม่มีจริงแสดงเป็น "ไม่ทราบตัวตน", job ลบอัตโนมัติแสดงเป็น "ระบบ"
+
+---
+
 ## โครงสร้างโฟลเดอร์
 
 ```
@@ -152,19 +170,20 @@ src/
 │   └── SnackbarContext.tsx
 ├── hooks/                       useAuth, useSnackbar
 ├── routes/
-│   ├── index.tsx                /login, /admin/users
-│   └── route-guard/             AuthGuard, GuestGuard
-├── layout/MainLayout/           แถบบน: ชื่อ, role, ออกจากระบบ
+│   ├── index.tsx                /login, /admin/users, /admin/audit-logs
+│   └── route-guard/             AuthGuard, GuestGuard, PermissionGuard (ซ่อนหน้าตามสิทธิ์)
+├── layout/MainLayout/           แถบบน: เมนู (ตามสิทธิ์), ชื่อ, role, ออกจากระบบ
 ├── pages/
 │   ├── Auth/                    Login.tsx + useLogin.tsx
+│   ├── Admin/AuditLog/          AuditLogTable.tsx + useListAuditLogTable.tsx (dpo)
 │   └── Admin/User/              UserTable.tsx + useListUserTable.tsx
 │       ├── component/           UserFormModal, UserDetailModal, DeleteUserModal
 │       └── type/
 ├── components/ProductComponent/User/UserForm/   ฟอร์มผู้ใช้ + useUserForm
 ├── services/
-│   ├── api/                     axios (withCredentials + 401 interceptor), auth, user
+│   ├── api/                     axios (withCredentials + 401 interceptor), auth, user, auditLog
 │   └── queries/                 TanStack Query hooks, queryClient (retry: false)
-├── types/products/              auth, user
+├── types/products/              auth, user, auditLog
 ├── themes/                      MUI theme (ฟอนต์ Sarabun)
 └── utils/                       validators (checksum เลขบัตรไทย), downloadJson
 ```
@@ -174,6 +193,6 @@ src/
 ## ข้อจำกัด / ก่อนขึ้น production
 
 - เมื่อ deploy บน HTTPS ฝั่ง API ต้องตั้ง `COOKIE_SECURE=true` และถ้าหน้าเว็บกับ API อยู่คนละ site ต้องพิจารณา CSRF token
-- ยังไม่มีหน้าจัดการบัญชีพนักงาน / เปลี่ยนรหัสผ่าน / ดู audit log (API มี `GET /audit-log` สำหรับ dpo แล้ว)
+- ยังไม่มีหน้าจัดการบัญชีพนักงาน / เปลี่ยนรหัสผ่าน
 - แก้ไขลบค่า field ให้ว่างไม่ได้ (ช่องว่าง = ไม่เปลี่ยน)
 - `ROLE_POLICY` ฝั่งเว็บเป็นแค่การปิดปุ่ม — ถ้าแก้สิทธิ์ต้องแก้ที่ API เป็นหลัก

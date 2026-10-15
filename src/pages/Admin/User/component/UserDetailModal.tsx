@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -16,6 +17,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import { PII_LABEL, ROLE_POLICY } from '@/constants/pdpa';
 import useAuth from '@/hooks/useAuth';
@@ -38,6 +40,7 @@ function UserDetailModal({ open, user, onClose }: Props) {
   const [reason, setReason] = useState('');
   const [revealed, setRevealed] = useState<TypeResUserData | null>(null);
   const { mutateAsync: reveal, isPending } = useRevealUserMutation();
+  const navigate = useNavigate();
 
   const canReveal = role !== 'support';
   const data = revealed ?? user;
@@ -106,6 +109,15 @@ function UserDetailModal({ open, user, onClose }: Props) {
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
+        {ROLE_POLICY[role].audit && (
+          <Button
+            startIcon={<HistoryOutlinedIcon />}
+            onClick={() => navigate(`/admin/audit-logs?subjectId=${user.id}`)}
+            sx={{ mr: 'auto' }}
+          >
+            ดูประวัติการเข้าถึง
+          </Button>
+        )}
         <Button onClick={onClose}>ปิด</Button>
       </DialogActions>
     </Dialog>
