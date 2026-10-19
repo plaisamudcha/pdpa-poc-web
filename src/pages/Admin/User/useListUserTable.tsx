@@ -39,6 +39,7 @@ const useListUserTable = () => {
   const handleView = (user: TypeResUserData) => setModal({ type: 'view', user });
   const handleEdit = (user: TypeResUserData) => setModal({ type: 'edit', user });
   const handleDelete = (user: TypeResUserData) => setModal({ type: 'delete', user });
+  const handleConsent = (user: TypeResUserData) => setModal({ type: 'consent', user });
   const handleCloseModal = () => setModal({ type: 'closed' });
 
   /** สิทธิขอรับสำเนาข้อมูล (มาตรา 30/31) */
@@ -71,6 +72,7 @@ const useListUserTable = () => {
     handleView,
     handleEdit,
     handleDelete,
+    handleConsent,
     handleExport,
     handleCloseModal
   };

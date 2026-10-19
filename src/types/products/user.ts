@@ -1,4 +1,6 @@
-type TypePiiField = 'firstName' | 'lastName' | 'email' | 'citizenId' | 'phone' | 'address' | 'healthNote';
+import { TypeConsentSummary } from './consent';
+
+type TypePiiField ='firstName' | 'lastName' | 'email' | 'citizenId' | 'phone' | 'address' | 'healthNote';
 
 type TypeStaffRole = 'support' | 'admin' | 'dpo';
 
@@ -16,6 +18,8 @@ type TypeResUserData = {
   createdAt: string;
   updatedAt: string;
   retentionUntil: string;
+  // มีเฉพาะในหน้ารายการ
+  consent?: TypeConsentSummary;
 };
 
 type TypeResUserList = IPagination<TypeResUserData>;
@@ -28,9 +32,11 @@ type TypeCreateUser = {
   phone?: string;
   address?: string;
   healthNote?: string;
+  // เวอร์ชันเอกสาร PDPA ที่เจ้าของข้อมูลยอมรับตอนสร้าง
+  consentVersion?: number;
 };
 
-type TypeUpdateUser = Partial<TypeCreateUser>;
+type TypeUpdateUser = Partial<Omit<TypeCreateUser, 'consentVersion'>>;
 
 type TypeUserExport = {
   userId: string;

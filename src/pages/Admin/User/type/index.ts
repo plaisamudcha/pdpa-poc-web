@@ -5,7 +5,8 @@ export type UserModalState =
   | { type: 'create' }
   | { type: 'edit'; user: TypeResUserData }
   | { type: 'view'; user: TypeResUserData }
-  | { type: 'delete'; user: TypeResUserData };
+  | { type: 'delete'; user: TypeResUserData }
+  | { type: 'consent'; user: TypeResUserData };
 
 export type UserSearchState = {
   search: string;

@@ -1,6 +1,18 @@
 import { TypePiiField } from './user';
 
-type TypeAuditAction = 'create' | 'list' | 'search' | 'read' | 'update' | 'export' | 'erase' | 'login' | 'logout';
+type TypeAuditAction =
+  | 'create'
+  | 'list'
+  | 'search'
+  | 'read'
+  | 'update'
+  | 'export'
+  | 'erase'
+  | 'login'
+  | 'logout'
+  | 'consent'
+  | 'withdraw_consent'
+  | 'upload_document';
 
 type TypeAuditResult = 'ok' | 'denied' | 'not_found';
 

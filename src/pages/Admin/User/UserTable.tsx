@@ -22,16 +22,19 @@ import AddIcon from '@mui/icons-material/Add';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { ReactElement } from 'react';
+import ConsentStatusChip from '@/components/ProductComponent/Consent/ConsentStatusChip';
 import { PII_LABEL } from '@/constants/pdpa';
 import { TypePiiField } from '@/types/products/user';
 import useListUserTable from './useListUserTable';
 import UserFormModal from './component/UserFormModal';
 import UserDetailModal from './component/UserDetailModal';
 import DeleteUserModal from './component/DeleteUserModal';
+import UserConsentModal from './component/UserConsentModal';
 
 const COLUMNS: TypePiiField[] = ['firstName', 'lastName', 'email', 'citizenId', 'phone', 'healthNote'];
 
@@ -112,6 +115,7 @@ function UserTable() {
                     {PII_LABEL[field]}
                   </TableCell>
                 ))}
+                <TableCell sx={{ fontWeight: 600 }}>PDPA</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>วันที่สร้าง</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>
                   จัดการ
@@ -126,12 +130,18 @@ function UserTable() {
                       {user[field] || '-'}
                     </TableCell>
                   ))}
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {user.consent ? <ConsentStatusChip consent={user.consent} onClick={() => hook.handleConsent(user)} /> : '-'}
+                  </TableCell>
                   <TableCell>{new Date(user.createdAt).toLocaleDateString('th-TH')}</TableCell>
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                     <ActionButton title="ดูรายละเอียด" onClick={() => hook.handleView(user)}>
                       <VisibilityOutlinedIcon fontSize="small" />
                     </ActionButton>
-                    <ActionButton title="แก้ไข" disabled={!hook.policy.update} onClick={() => hook.handleEdit(user)}>
+                    <ActionButton title="ความยินยอม PDPA" onClick={() => hook.handleConsent(user)}>
+                      <FactCheckOutlinedIcon fontSize="small" />
+                    </ActionButton>
+                    <ActionButton title="แก้ไข"disabled={!hook.policy.update} onClick={() => hook.handleEdit(user)}>
                       <EditOutlinedIcon fontSize="small" />
                     </ActionButton>
                     <ActionButton title="ส่งออกข้อมูล (JSON)" disabled={!hook.policy.export} onClick={() => hook.handleExport(user)}>
@@ -145,7 +155,7 @@ function UserTable() {
               ))}
               {!hook.isLoading && hook.data.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={COLUMNS.length + 2} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  <TableCell colSpan={COLUMNS.length + 3}align="center" sx={{ py: 6, color: 'text.secondary' }}>
                     {hook.search.search ? 'ไม่พบผู้ใช้ที่ตรงกับคำค้น' : 'ยังไม่มีข้อมูลผู้ใช้'}
                   </TableCell>
                 </TableRow>
@@ -177,6 +187,7 @@ function UserTable() {
       )}
       {hook.modal.type === 'view' && <UserDetailModal open user={hook.modal.user} onClose={hook.handleCloseModal} />}
       {hook.modal.type === 'delete' && <DeleteUserModal open user={hook.modal.user} onClose={hook.handleCloseModal} />}
+      {hook.modal.type === 'consent' && <UserConsentModal open user={hook.modal.user} onClose={hook.handleCloseModal} />}
     </Stack>
   );
 }

@@ -9,7 +9,8 @@ const intance = axios.create({
 
 intance.interceptors.request.use(
   (request) => {
-    request.headers['Content-Type'] = 'application/json;charset=UTF-8';
+    // ค่าเริ่มต้นเป็น JSON — request ที่กำหนดเอง (เช่น อัปโหลด PDF) ไม่ถูกเขียนทับ
+    if (!request.headers['Content-Type']) request.headers['Content-Type'] = 'application/json;charset=UTF-8';
     return request;
   },
   (error) => Promise.reject(error)

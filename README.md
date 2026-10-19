@@ -5,7 +5,7 @@
 
 - **Stack:** Vite + React 19 + TypeScript + MUI 5 + TanStack Query + react-hook-form + axios
 - **โครงสร้างโฟลเดอร์:** ตาม citizen-portal-admin-web
-- **หน้าที่มี:** หน้า login และหน้าจัดการผู้ใช้หน้าเดียว (CRUD + ค้นหา + ส่งออก)
+- **หน้าที่มี:** หน้า login, จัดการผู้ใช้ (CRUD + ค้นหา + ส่งออก + ความยินยอม PDPA), เอกสาร PDPA (PDF แบบมีเวอร์ชัน), audit log
 
 ---
 
@@ -74,6 +74,8 @@ GuestGuard: login แล้วเข้า /login → /admin/users
 | แก้ไข (ม.35) | ❌ | ✅ | ✅ |
 | ส่งออก JSON (ม.30, 31) | ❌ | ❌ | ✅ |
 | ลบ (ม.33) | ❌ | ❌ | ✅ |
+| บันทึกยอมรับ / ถอนความยินยอม | ✅ | ✅ | ✅ |
+| อัปโหลดเอกสาร PDPA | ❌ | ❌ | ✅ |
 
 ปุ่มที่ไม่มีสิทธิ์จะเป็นสีเทาพร้อม tooltip "(ไม่มีสิทธิ์)" — ตาราง `ROLE_POLICY` ใน `src/constants/pdpa.ts` ต้องตรงกับฝั่ง API
 
@@ -140,6 +142,48 @@ useListUserTable: state { search, page, pageSize }
 
 ---
 
+## ความยินยอม PDPA + เอกสารแบบมีเวอร์ชัน
+
+### หน้าเอกสาร PDPA (`/admin/consent-documents`)
+
+ทุก role เปิดดูได้ (ใช้เปิดให้เจ้าของข้อมูลอ่าน) — อัปโหลดได้เฉพาะ dpo
+
+```
+"อัปโหลดเวอร์ชันใหม่" → UploadConsentDocumentModal: ชื่อเอกสาร, สรุปสิ่งที่เปลี่ยน, ไฟล์ PDF (≤ 10 MB)
+ → POST /consent-document?title=&note=&fileName=  body = ไฟล์ (Content-Type: application/pdf)
+ → API ตั้งเลขเวอร์ชัน = ล่าสุด + 1 เอง (หน้าเว็บแค่แสดงว่า "จะเป็นเวอร์ชัน N")
+ → invalidate รายการเอกสาร + รายการผู้ใช้ (สถานะของคนที่ยอมรับเวอร์ชันเก่าเปลี่ยนเป็น "ต้องยอมรับใหม่")
+```
+
+ไฟล์ PDF ดึงผ่าน `GET /consent-document/:version/file` (ส่ง cookie) แล้วแสดงใน `PdfViewerDialog` เป็น blob URL — cache ต่อเวอร์ชันได้ตลอดเพราะไฟล์ไม่เปลี่ยน
+
+### ยอมรับตอนเพิ่มผู้ใช้
+
+```
+UserFormModal (create) → GET /consent-document/latest
+ ├─ มีเอกสาร → ConsentAcceptBox: "เปิดอ่านเอกสาร" (ต้องเปิดก่อนถึงติ๊กได้) → ติ๊กยอมรับ → ปุ่มบันทึกถึงกดได้
+ │   → POST /user { ...pii, consentVersion: N }
+ │   → 409 มีเวอร์ชันใหม่ระหว่างกรอก → ดึงเวอร์ชันล่าสุดใหม่ ช่องติ๊กถูกล้าง ต้องเปิดอ่านใหม่
+ └─ ยังไม่มีเอกสาร → แจ้งเตือน และบันทึกได้โดยไม่มีการยอมรับ
+```
+
+### ความยินยอมของผู้ใช้แต่ละคน — `UserConsentModal`
+
+เปิดจากคอลัมน์ "PDPA" (chip สถานะ) หรือไอคอน ✓ ในตาราง → `GET /user/:id/consent`
+
+| สถานะ | chip | ทำอะไรได้ |
+|---|---|---|
+| `accepted` | ยอมรับแล้ว v3 | ถอนความยินยอม (ต้องระบุเหตุผล) |
+| `outdated` | ต้องยอมรับใหม่ v2 → v3 | เปิดอ่าน v3 แล้วบันทึกการยอมรับ / ถอน |
+| `withdrawn` | ถอนความยินยอม v3 | บันทึกการยอมรับเวอร์ชันล่าสุดใหม่ |
+| `none` | ยังไม่ยอมรับ | บันทึกการยอมรับ |
+
+- บันทึกยอมรับส่ง `version` ที่เปิดให้อ่าน → ถ้ามีเวอร์ชันใหม่ระหว่างนั้น API ตอบ 409 และ modal ดึงข้อมูลใหม่
+- ตารางประวัติ: วันที่ / ยอมรับ-ถอน / เวอร์ชัน (คลิกเปิด PDF ของเวอร์ชันนั้น) / staff ที่บันทึก / เหตุผล
+- การถอนไม่ลบข้อมูล — ถ้าต้องการลบให้ใช้ปุ่มลบ (ม.33) แยกต่างหาก
+
+---
+
 ## หน้า Audit log (`/admin/audit-logs`, dpo เท่านั้น)
 
 เมนู "Audit log" แสดงเฉพาะ role ที่มีสิทธิ์ `audit` — พิมพ์ URL ตรงก็ถูก `PermissionGuard` พากลับ และ API ตอบ 403 อีกชั้น
@@ -170,20 +214,23 @@ src/
 │   └── SnackbarContext.tsx
 ├── hooks/                       useAuth, useSnackbar
 ├── routes/
-│   ├── index.tsx                /login, /admin/users, /admin/audit-logs
+│   ├── index.tsx                /login, /admin/users, /admin/consent-documents, /admin/audit-logs
 │   └── route-guard/             AuthGuard, GuestGuard, PermissionGuard (ซ่อนหน้าตามสิทธิ์)
 ├── layout/MainLayout/           แถบบน: เมนู (ตามสิทธิ์), ชื่อ, role, ออกจากระบบ
 ├── pages/
 │   ├── Auth/                    Login.tsx + useLogin.tsx
 │   ├── Admin/AuditLog/          AuditLogTable.tsx + useListAuditLogTable.tsx (dpo)
+│   ├── Admin/ConsentDocument/   ConsentDocumentTable.tsx + UploadConsentDocumentModal (อัปโหลด dpo)
 │   └── Admin/User/              UserTable.tsx + useListUserTable.tsx
-│       ├── component/           UserFormModal, UserDetailModal, DeleteUserModal
+│       ├── component/           UserFormModal, UserDetailModal, DeleteUserModal, UserConsentModal
 │       └── type/
-├── components/ProductComponent/User/UserForm/   ฟอร์มผู้ใช้ + useUserForm
+├── components/ProductComponent/
+│   ├── User/UserForm/           ฟอร์มผู้ใช้ + useUserForm (+ ยอมรับเอกสาร PDPA ตอนสร้าง)
+│   └── Consent/                 PdfViewerDialog, ConsentAcceptBox, ConsentStatusChip
 ├── services/
-│   ├── api/                     axios (withCredentials + 401 interceptor), auth, user, auditLog
+│   ├── api/                     axios (withCredentials + 401 interceptor), auth, user, auditLog, consent
 │   └── queries/                 TanStack Query hooks, queryClient (retry: false)
-├── types/products/              auth, user, auditLog
+├── types/products/              auth, user, auditLog, consent
 ├── themes/                      MUI theme (ฟอนต์ Sarabun)
 └── utils/                       validators (checksum เลขบัตรไทย), downloadJson
 ```

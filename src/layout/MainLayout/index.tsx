@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { AppBar, Box, Button, Chip, Container, Stack, Tab, Tabs, Toolbar, Tooltip, Typography } from '@mui/material';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
@@ -16,6 +17,7 @@ export default function MainLayout() {
   // เมนูที่ role ไม่มีสิทธิ์จะไม่แสดง
   const menus = [
     { path: '/admin/users', label: 'จัดการผู้ใช้', icon: <PeopleOutlineIcon fontSize="small" />, show: true },
+    { path: '/admin/consent-documents', label: 'เอกสาร PDPA', icon: <DescriptionOutlinedIcon fontSize="small" />, show: true },
     { path: '/admin/audit-logs', label: 'Audit log', icon: <HistoryOutlinedIcon fontSize="small" />, show: policy.audit }
   ].filter((menu) => menu.show);
   const current = menus.find((menu) => pathname.startsWith(menu.path))?.path ?? false;
