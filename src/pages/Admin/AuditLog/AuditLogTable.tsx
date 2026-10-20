@@ -22,11 +22,13 @@ import {
 } from '@mui/material';
 import FilterAltOffOutlinedIcon from '@mui/icons-material/FilterAltOffOutlined';
 import SearchIcon from '@mui/icons-material/Search';
-import { AUDIT_ACTION_LABEL, AUDIT_RESULT_LABEL, AUDIT_ROLE_LABEL, PII_LABEL } from '@/constants/pdpa';
-import { TypeAuditAction, TypeAuditResult, TypeResAuditLog } from '@/types/products/auditLog';
+import { AUDIT_ACTION_LABEL, AUDIT_RESULT_LABEL, AUTH_ACTIONS, PII_LABEL } from '@/constants/pdpa';
+import { TypeAuditAction, TypeAuditResult } from '@/types/products/auditLog';
+import ActorCell from './component/ActorCell';
 import useListAuditLogTable from './useListAuditLogTable';
 
-const ACTIONS = Object.keys(AUDIT_ACTION_LABEL) as TypeAuditAction[];
+// login/logout แยกไปหน้าประวัติการเข้าสู่ระบบ
+const ACTIONS = (Object.keys(AUDIT_ACTION_LABEL) as TypeAuditAction[]).filter((action) => !AUTH_ACTIONS.includes(action));
 const RESULTS = Object.keys(AUDIT_RESULT_LABEL) as TypeAuditResult[];
 
 /** action ที่ field ในคอลัมน์หมายถึง "field ที่ถอดรหัสแบบเต็ม" — update หมายถึง "field ที่ถูกแก้" */
@@ -36,48 +38,8 @@ const FIELD_HINT: Partial<Record<TypeAuditAction, string>> = {
   update: 'แก้ไข'
 };
 
-function ActorCell({ actor, onFilter }: { actor: TypeResAuditLog['actor']; onFilter: (username: string) => void }) {
-  if (actor.username) {
-    return (
-      <Stack spacing={0.25}>
-        <Stack direction="row" spacing={0.75} alignItems="center">
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {actor.displayName}
-          </Typography>
-          <Chip size="small" variant="outlined" label={AUDIT_ROLE_LABEL[actor.role]} sx={{ height: 20 }} />
-          {actor.isActive === false && <Chip size="small" color="default" label="ปิดบัญชีแล้ว" sx={{ height: 20 }} />}
-        </Stack>
-        <Tooltip title="ดูทุกรายการของพนักงานคนนี้">
-          <Link
-            component="button"
-            variant="caption"
-            underline="hover"
-            color="text.secondary"
-            onClick={() => onFilter(actor.username!)}
-            sx={{ textAlign: 'left' }}
-          >
-            {actor.username}
-          </Link>
-        </Tooltip>
-      </Stack>
-    );
-  }
-
-  // ไม่ใช่บัญชีพนักงาน: job ของระบบ หรือ login ด้วย username ที่ไม่มีอยู่จริง
-  return (
-    <Stack spacing={0.25}>
-      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-        {AUDIT_ROLE_LABEL[actor.role] ?? actor.role}
-      </Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-        {actor.id}
-      </Typography>
-    </Stack>
-  );
-}
-
 function AuditLogTable() {
-  const hook = useListAuditLogTable();
+  const hook = useListAuditLogTable('data');
 
   return (
     <Stack spacing={2}>

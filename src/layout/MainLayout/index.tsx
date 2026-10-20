@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { AppBar, Box, Button, Chip, Container, Stack, Tab, Tabs, Toolbar, Tooltip, Typography } from '@mui/material';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
@@ -18,7 +19,8 @@ export default function MainLayout() {
   const menus = [
     { path: '/admin/users', label: 'จัดการผู้ใช้', icon: <PeopleOutlineIcon fontSize="small" />, show: true },
     { path: '/admin/consent-documents', label: 'เอกสาร PDPA', icon: <DescriptionOutlinedIcon fontSize="small" />, show: true },
-    { path: '/admin/audit-logs', label: 'Audit log', icon: <HistoryOutlinedIcon fontSize="small" />, show: policy.audit }
+    { path: '/admin/audit-logs', label: 'Audit log', icon: <HistoryOutlinedIcon fontSize="small" />, show: policy.audit },
+    { path: '/admin/login-history', label: 'ประวัติการเข้าสู่ระบบ', icon: <LoginOutlinedIcon fontSize="small" />, show: policy.audit }
   ].filter((menu) => menu.show);
   const current = menus.find((menu) => pathname.startsWith(menu.path))?.path ?? false;
 

@@ -77,6 +77,9 @@ export const CONSENT_ACTION_LABEL: Record<TypeConsentAction, string> = {
   withdraw: 'ถอนความยินยอม'
 };
 
+/** action ที่นับเป็นประวัติการเข้าสู่ระบบ — ต้องตรงกับ AUTH_ACTIONS ฝั่ง API */
+export const AUTH_ACTIONS: TypeAuditAction[] = ['login', 'logout'];
+
 export const AUDIT_ACTION_LABEL: Record<TypeAuditAction, string> = {
   login: 'เข้าสู่ระบบ',
   logout: 'ออกจากระบบ',

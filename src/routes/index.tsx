@@ -3,6 +3,7 @@ import MainLayout from '@/layout/MainLayout';
 import Login from '@/pages/Auth/Login';
 import UserTable from '@/pages/Admin/User/UserTable';
 import AuditLogTable from '@/pages/Admin/AuditLog/AuditLogTable';
+import LoginHistoryTable from '@/pages/Admin/LoginHistory/LoginHistoryTable';
 import ConsentDocumentTable from '@/pages/Admin/ConsentDocument/ConsentDocumentTable';
 import AuthGuard from './route-guard/AuthGuard';
 import GuestGuard from './route-guard/GuestGuard';
@@ -37,6 +38,14 @@ const router = createBrowserRouter(
           element: (
             <PermissionGuard permission="audit">
               <AuditLogTable />
+            </PermissionGuard>
+          )
+        },
+        {
+          path: 'admin/login-history',
+          element: (
+            <PermissionGuard permission="audit">
+              <LoginHistoryTable />
             </PermissionGuard>
           )
         }

@@ -4,7 +4,7 @@ import * as conf from '@/config';
 import useAuth from '@/hooks/useAuth';
 import { getErrorMessage } from '@/services/api/axios';
 import { useGetAuditLogsQuery } from '@/services/queries/auditLog';
-import { TypeAuditLogFilter } from '@/types/products/auditLog';
+import { TypeAuditCategory, TypeAuditLogFilter } from '@/types/products/auditLog';
 import { AuditLogFilterForm } from './type';
 
 const OBJECT_ID = /^[a-f0-9]{24}$/i;
@@ -12,8 +12,9 @@ const OBJECT_ID = /^[a-f0-9]{24}$/i;
 const EMPTY_FORM: AuditLogFilterForm = { action: '', result: '', username: '', subjectId: '', from: '', to: '' };
 
 /** แปลงฟอร์มเป็นตัวกรองที่ส่งให้ API — วันที่ใช้เวลาท้องถิ่น ต้นวัน/ท้ายวัน */
-function toFilter(form: AuditLogFilterForm): TypeAuditLogFilter {
+function toFilter(form: AuditLogFilterForm, category: TypeAuditCategory): TypeAuditLogFilter {
   return {
+    category,
     action: form.action || undefined,
     result: form.result || undefined,
     username: form.username.trim() || undefined,
@@ -29,7 +30,8 @@ function validate(form: AuditLogFilterForm): string | null {
   return null;
 }
 
-const useListAuditLogTable = () => {
+/** ใช้ร่วมกันระหว่างหน้า Audit log (category = data) และหน้าประวัติการเข้าสู่ระบบ (category = auth) */
+const useListAuditLogTable = (category: TypeAuditCategory) => {
   const role = useAuth().user!.role;
   const [searchParams] = useSearchParams();
 
@@ -39,7 +41,7 @@ const useListAuditLogTable = () => {
 
   const [form, setForm] = useState<AuditLogFilterForm>(initialForm);
   const [formError, setFormError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<TypeAuditLogFilter>(toFilter(initialForm));
+  const [filter, setFilter] = useState<TypeAuditLogFilter>(toFilter(initialForm, category));
   const [page, setPage] = useState(conf.DEFAULT_PAGE);
   const [pageSize, setPageSize] = useState(25);
 
@@ -54,7 +56,7 @@ const useListAuditLogTable = () => {
     const message = validate(next);
     setFormError(message);
     if (message) return;
-    setFilter(toFilter(next));
+    setFilter(toFilter(next, category));
     setPage(conf.DEFAULT_PAGE);
   };
 
@@ -86,7 +88,8 @@ const useListAuditLogTable = () => {
     setPage(conf.DEFAULT_PAGE);
   };
 
-  const hasFilter = Object.values(filter).some(Boolean);
+  // category เป็นค่าคงที่ของหน้า ไม่นับเป็นตัวกรองที่ผู้ใช้เลือก
+  const hasFilter = Object.entries(filter).some(([key, value]) => key !== 'category' && value);
 
   return {
     data,

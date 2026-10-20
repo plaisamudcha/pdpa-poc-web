@@ -39,7 +39,11 @@ type TypeResAuditLog = {
 
 type TypeResAuditLogList = IPagination<TypeResAuditLog>;
 
+/** auth = ประวัติการเข้าสู่ระบบ (login/logout), data = การเข้าถึงข้อมูลส่วนบุคคล (action อื่นทั้งหมด) */
+type TypeAuditCategory = 'auth' | 'data';
+
 type TypeAuditLogFilter = {
+  category?: TypeAuditCategory;
   action?: TypeAuditAction;
   result?: TypeAuditResult;
   username?: string;
@@ -48,4 +52,12 @@ type TypeAuditLogFilter = {
   to?: string;
 };
 
-export type { TypeAuditAction, TypeAuditResult, TypeAuditActorRole, TypeResAuditLog, TypeResAuditLogList, TypeAuditLogFilter };
+export type {
+  TypeAuditAction,
+  TypeAuditResult,
+  TypeAuditActorRole,
+  TypeAuditCategory,
+  TypeResAuditLog,
+  TypeResAuditLogList,
+  TypeAuditLogFilter
+};
