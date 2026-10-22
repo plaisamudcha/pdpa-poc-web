@@ -5,7 +5,7 @@
 
 - **Stack:** Vite + React 19 + TypeScript + MUI 5 + TanStack Query + react-hook-form + axios
 - **โครงสร้างโฟลเดอร์:** ตาม citizen-portal-admin-web
-- **หน้าที่มี:** หน้า login, จัดการผู้ใช้ (CRUD + ค้นหา + ส่งออก + ความยินยอม PDPA), เอกสาร PDPA (PDF แบบมีเวอร์ชัน), audit log
+- **หน้าที่มี:** หน้า login, จัดการผู้ใช้ (CRUD + ค้นหา + ส่งออก + ความยินยอม PDPA), เอกสาร PDPA (PDF แบบมีเวอร์ชัน), audit log, ประวัติการเข้าสู่ระบบ
 
 ---
 
@@ -187,18 +187,36 @@ UserFormModal (create) → GET /consent-document/latest
 ## หน้า Audit log (`/admin/audit-logs`, dpo เท่านั้น)
 
 เมนู "Audit log" แสดงเฉพาะ role ที่มีสิทธิ์ `audit` — พิมพ์ URL ตรงก็ถูก `PermissionGuard` พากลับ และ API ตอบ 403 อีกชั้น
+หน้านี้แสดงเฉพาะการเข้าถึงข้อมูลส่วนบุคคล — login / logout แยกไปหน้า [ประวัติการเข้าสู่ระบบ](#หน้าประวัติการเข้าสู่ระบบ-adminlogin-history-dpo-เท่านั้น)
 
 ```
-useListAuditLogTable: ฟอร์มตัวกรอง → กด "ค้นหา" → useGetAuditLogsQuery
- → GET /audit-log?action=&result=&username=&subjectId=&from=&to=&page=&pageSize=
+useListAuditLogTable('data'): ฟอร์มตัวกรอง → กด "ค้นหา" → useGetAuditLogsQuery
+ → GET /audit-log?category=data&action=&result=&username=&subjectId=&from=&to=&page=&pageSize=
  → ตาราง: เวลา / ผู้ทำรายการ / การกระทำ / ผลลัพธ์ / รหัสผู้ใช้ / field ที่ถอดรหัสหรือแก้ไข / เหตุผล
 ```
 
-- **ตัวกรอง:** การกระทำ, ผลลัพธ์ (สำเร็จ / ถูกปฏิเสธ / ไม่พบ), username พนักงาน, รหัสผู้ใช้, ช่วงวันที่
+- **ตัวกรอง:** การกระทำ (ไม่มี login / logout), ผลลัพธ์ (สำเร็จ / ถูกปฏิเสธ / ไม่พบ), username พนักงาน, รหัสผู้ใช้, ช่วงวันที่
 - **คลิก username** → ดูทุกอย่างที่พนักงานคนนั้นทำ / **คลิกรหัสผู้ใช้** → ดูทุกคนที่เข้าถึงข้อมูลของผู้ใช้คนนั้น
 - จากหน้ารายละเอียดผู้ใช้ dpo กด "ดูประวัติการเข้าถึง" → เปิด `/admin/audit-logs?subjectId=<id>`
 - log ไม่มี PII ของผู้ใช้ — แสดงแค่รหัสอ้างอิงและชื่อ field (`healthNote` ไฮไลต์สีส้มเพราะเป็นข้อมูลอ่อนไหว)
-- ชื่อพนักงาน API เติมให้ตอนแสดงจาก `staffs` — login ด้วย username ที่ไม่มีจริงแสดงเป็น "ไม่ทราบตัวตน", job ลบอัตโนมัติแสดงเป็น "ระบบ"
+- ชื่อพนักงาน API เติมให้ตอนแสดงจาก `staffs` — job ลบอัตโนมัติแสดงเป็น "ระบบ"
+
+---
+
+## หน้าประวัติการเข้าสู่ระบบ (`/admin/login-history`, dpo เท่านั้น)
+
+ใช้สิทธิ์ `audit` เหมือนหน้า Audit log และใช้ hook ตัวเดียวกัน ต่างกันแค่ category
+
+```
+useListAuditLogTable('auth'): ฟอร์มตัวกรอง → กด "ค้นหา" → useGetAuditLogsQuery
+ → GET /audit-log?category=auth&action=&result=&username=&from=&to=&page=&pageSize=
+ → ตาราง: เวลา / พนักงาน / การกระทำ (เข้าสู่ระบบ / ออกจากระบบ) / ผลลัพธ์ / สาเหตุ
+```
+
+- **ตัวกรอง:** การกระทำ, ผลลัพธ์ (สำเร็จ / ถูกปฏิเสธ), username พนักงาน, ช่วงวันที่
+- **สาเหตุ** ของ login ที่ไม่สำเร็จ: รหัสผ่านผิด, บัญชีถูกล็อก, username ไม่มีอยู่จริง (แสดงผู้ทำรายการเป็น "ไม่ทราบตัวตน")
+- ไม่อ่าน `?subjectId=` จาก URL เพราะ log login ไม่มีรหัสผู้ใช้
+- action ที่นับเป็นหมวด auth อยู่ใน `AUTH_ACTIONS` (`constants/pdpa.ts`) — ต้องตรงกับฝั่ง API
 
 ---
 
@@ -214,12 +232,14 @@ src/
 │   └── SnackbarContext.tsx
 ├── hooks/                       useAuth, useSnackbar
 ├── routes/
-│   ├── index.tsx                /login, /admin/users, /admin/consent-documents, /admin/audit-logs
+│   ├── index.tsx                /login, /admin/users, /admin/consent-documents, /admin/audit-logs, /admin/login-history
 │   └── route-guard/             AuthGuard, GuestGuard, PermissionGuard (ซ่อนหน้าตามสิทธิ์)
 ├── layout/MainLayout/           แถบบน: เมนู (ตามสิทธิ์), ชื่อ, role, ออกจากระบบ
 ├── pages/
 │   ├── Auth/                    Login.tsx + useLogin.tsx
-│   ├── Admin/AuditLog/          AuditLogTable.tsx + useListAuditLogTable.tsx (dpo)
+│   ├── Admin/AuditLog/          AuditLogTable.tsx + useListAuditLogTable.tsx (dpo, ใช้ร่วมกับ LoginHistory)
+│   │   └── component/           ActorCell
+│   ├── Admin/LoginHistory/      LoginHistoryTable.tsx (dpo)
 │   ├── Admin/ConsentDocument/   ConsentDocumentTable.tsx + UploadConsentDocumentModal (อัปโหลด dpo)
 │   └── Admin/User/              UserTable.tsx + useListUserTable.tsx
 │       ├── component/           UserFormModal, UserDetailModal, DeleteUserModal, UserConsentModal

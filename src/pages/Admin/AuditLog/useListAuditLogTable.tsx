@@ -36,7 +36,8 @@ const useListAuditLogTable = (category: TypeAuditCategory) => {
   const [searchParams] = useSearchParams();
 
   // เปิดจากหน้ารายละเอียดผู้ใช้ด้วย ?subjectId=... → กรองประวัติของผู้ใช้คนนั้นทันที
-  const initialSubjectId = searchParams.get('subjectId') ?? '';
+  // log หมวด auth ไม่มี subjectId — ไม่อ่านจาก URL ไม่งั้นได้ตารางว่างโดยไม่มีช่องให้เห็นว่ากรองอยู่
+  const initialSubjectId = category === 'data' ? (searchParams.get('subjectId') ?? '') : '';
   const initialForm: AuditLogFilterForm = { ...EMPTY_FORM, subjectId: OBJECT_ID.test(initialSubjectId) ? initialSubjectId : '' };
 
   const [form, setForm] = useState<AuditLogFilterForm>(initialForm);
